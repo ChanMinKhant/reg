@@ -606,181 +606,6 @@ export const StudentRegistrationFormPage = () => {
   };
 
   // Step 4 Content: Completed / Review Page
-  // Step 4 Content: Payment Page
-  const renderPaymentStep = () => {
-    const [payerName, setPayerName] = useState('');
-    const [transactionCode, setTransactionCode] = useState('');
-    const [file, setFile] = useState<File | null>(null);
-    const [previewUrl, setPreviewUrl] = useState('');
-    const [localError, setLocalError] = useState('');
-
-    const submitPaymentMutation = useSubmitStudentPaymentMutation();
-    const { data: paymentRes, isLoading: isPaymentLoading } = useStudentPaymentQuery(
-      user?.applicationStatus === 'PAYMENT_SUBMITTED'
-    );
-    const existingPayment = paymentRes && paymentRes.ok ? paymentRes.data : null;
-
-    useEffect(() => {
-      if (existingPayment) {
-        setPayerName(existingPayment.payerName);
-        setTransactionCode(existingPayment.transactionCode);
-        setPreviewUrl(`/${existingPayment.paymentScreenshot}`);
-      }
-    }, [existingPayment]);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const selected = e.target.files?.[0];
-      if (selected) {
-        setFile(selected);
-        setPreviewUrl(URL.createObjectURL(selected));
-      }
-    };
-
-    const handlePaymentSubmit = () => {
-      setLocalError('');
-      if (!payerName.trim()) {
-        setLocalError('ငွေလွှဲသူအမည် ဖြည့်ရန်လိုအပ်ပါသည်။');
-        return;
-      }
-      if (!transactionCode.trim()) {
-        setLocalError('နောက်ဆုံးဂဏန်း ၆ လုံး ဖြည့်ရန်လိုအပ်ပါသည်။');
-        return;
-      }
-      if (transactionCode.length !== 6 || !/^\d+$/.test(transactionCode)) {
-        setLocalError('ငွေလွှဲကုဒ်သည် ဂဏန်း ၆ လုံး ဖြစ်ရပါမည်။');
-        return;
-      }
-      if (!file && !existingPayment) {
-        setLocalError('ငွေလွှဲပြေစာ ဓာတ်ပုံ တင်ရန်လိုအပ်ပါသည်။');
-        return;
-      }
-
-      submitPaymentMutation.mutate(
-        {
-          payerName,
-          transactionCode,
-          file: file!,
-        },
-        {
-          onSuccess: (res) => {
-            if (res.ok) {
-              setActiveStepOverride('completed');
-            }
-          },
-          onError: (err) => {
-            const apiError = extractApiError(err);
-            setLocalError(apiError.message ?? 'ငွေပေးချေမှု တင်သွင်းခြင်း မအောင်မြင်ပါ။');
-          },
-        }
-      );
-    };
-
-    const isSubmitted = user?.applicationStatus === 'PAYMENT_SUBMITTED' || !!existingPayment;
-
-    return (
-      <div className='max-w-[800px] mx-auto bg-white border border-gray-200 rounded-2xl p-6 shadow-sm font-myanmar'>
-        <h3 className='text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4'>
-          ကျောင်းအပ်နှံခ ငွေပေးချေရန်
-        </h3>
-
-        {/* Info card */}
-        <div className='bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 text-sm text-blue-800 leading-relaxed'>
-          <p className='font-bold mb-1.5'>⚠️ ငွေပေးချေမှု လမ်းညွှန်ချက် -</p>
-          <p>ကျောင်းအပ်နှံခ ၁၅,၀၀၀ ကျပ် အား အောက်ဖော်ပြပါ ငွေစာရင်း တစ်ခုခုသို့ လွှဲပေးပါရန် -</p>
-          <div className='mt-2.5 space-y-1.5 font-medium pl-2'>
-            <p>• KBZPay Account: <span className='font-bold text-blue-900'>09 123 456 789</span> (U Kyaw Kyaw)</p>
-            <p>• WavePay Account: <span className='font-bold text-blue-900'>09 123 456 789</span> (U Kyaw Kyaw)</p>
-            <p>• KBZ Bank: <span className='font-bold text-blue-900'>123-456-789-0123-4567</span> (U Kyaw Kyaw)</p>
-          </div>
-          <p className='mt-3 font-semibold text-red-600'>
-            * ငွေလွှဲပြေစာ ဓာတ်ပုံ တင်ရန်နှင့် ငွေလွှဲကုဒ်၏ နောက်ဆုံးဂဏန်း ၆ လုံး (last 6 digits) ကို တိကျစွာ ဖြည့်သွင်းပေးပါရန်။
-          </p>
-        </div>
-
-        {localError && (
-          <div className='bg-red-50 border border-red-200 rounded-xl p-3 mb-4 text-xs font-semibold text-red-700'>
-            ❌ {localError}
-          </div>
-        )}
-
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-6 items-start'>
-          {/* Form inputs */}
-          <div className='md:col-span-2 space-y-4'>
-            <div>
-              <label className='block text-xs font-semibold text-gray-600 mb-1.5'>
-                ငွေလွှဲသူအမည် (Payer Name)
-              </label>
-              <input
-                type='text'
-                value={payerName}
-                onChange={(e) => setPayerName(e.target.value)}
-                disabled={isSubmitted || isPaymentLoading}
-                placeholder='ဥပမာ - U Kyaw Kyaw'
-                className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50'
-              />
-            </div>
-
-            <div>
-              <label className='block text-xs font-semibold text-gray-600 mb-1.5'>
-                ငွေလွှဲကုဒ်၏ နောက်ဆုံး ဂဏန်း ၆ လုံး (Transaction Code - Last 6 digits)
-              </label>
-              <input
-                type='text'
-                value={transactionCode}
-                onChange={(e) => setTransactionCode(e.target.value)}
-                disabled={isSubmitted || isPaymentLoading}
-                placeholder='ဥပမာ - 123456'
-                maxLength={6}
-                className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50'
-              />
-            </div>
-          </div>
-
-          {/* Photo upload */}
-          <div className='flex flex-col items-center justify-center'>
-            <label className='block text-xs font-semibold text-gray-600 mb-2 text-center w-full'>
-              ငွေလွှဲပြေစာ တင်ရန် (Payment Screenshot)
-            </label>
-            <PhotoUpload
-              label='ပြေစာ တင်ရန်'
-              preview={previewUrl}
-              onChange={handleFileChange}
-              isUploading={submitPaymentMutation.isPending}
-              isError={false}
-              width={150}
-              height={200}
-            />
-          </div>
-        </div>
-
-        <div className='flex justify-between items-center border-t border-gray-100 pt-5 mt-6'>
-          <button
-            onClick={() => setActiveStepOverride('recommendations')}
-            disabled={isSubmitted || submitPaymentMutation.isPending}
-            className='rounded-full border border-gray-300 hover:bg-gray-50 active:scale-[0.98] px-6 py-2.5 text-xs md:text-sm font-semibold text-gray-700 transition-all disabled:opacity-50'
-          >
-            နောက်သို့ပြန်သွားရန်
-          </button>
-          {!isSubmitted && (
-            <button
-              onClick={handlePaymentSubmit}
-              disabled={submitPaymentMutation.isPending}
-              className='flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 px-8 py-2.5 text-xs md:text-sm font-semibold text-white shadow-md transition-all'
-            >
-              {submitPaymentMutation.isPending ? (
-                <>
-                  <span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
-                  တင်သွင်းနေသည်...
-                </>
-              ) : (
-                'ငွေပေးချေမှု တင်သွင်းရန်'
-              )}
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  };
 
   // Step 5 Content: Completed / Review Page
   const renderCompletedStep = () => {
@@ -972,9 +797,191 @@ export const StudentRegistrationFormPage = () => {
         )}
         {activeStep === 'nrc_photos' && renderNrcPhotosStep()}
         {activeStep === 'recommendations' && renderRecommendationsStep()}
-        {activeStep === 'payment' && renderPaymentStep()}
+        {activeStep === 'payment' && (
+          <PaymentStep user={user} setActiveStepOverride={setActiveStepOverride} />
+        )}
         {activeStep === 'completed' && renderCompletedStep()}
       </main>
+    </div>
+  );
+};
+
+interface PaymentStepProps {
+  user: any;
+  setActiveStepOverride: (step: Step) => void;
+}
+
+const PaymentStep = ({ user, setActiveStepOverride }: PaymentStepProps) => {
+  const [payerName, setPayerName] = useState('');
+  const [transactionCode, setTransactionCode] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState('');
+  const [localError, setLocalError] = useState('');
+
+  const submitPaymentMutation = useSubmitStudentPaymentMutation();
+  const { data: paymentRes, isLoading: isPaymentLoading } = useStudentPaymentQuery(
+    user?.applicationStatus === 'PAYMENT_SUBMITTED'
+  );
+  const existingPayment = paymentRes && paymentRes.ok ? paymentRes.data : null;
+
+  useEffect(() => {
+    if (existingPayment) {
+      setPayerName(existingPayment.payerName);
+      setTransactionCode(existingPayment.transactionCode);
+      setPreviewUrl(`/${existingPayment.paymentScreenshot}`);
+    }
+  }, [existingPayment]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (selected) {
+      setFile(selected);
+      setPreviewUrl(URL.createObjectURL(selected));
+    }
+  };
+
+  const handlePaymentSubmit = () => {
+    setLocalError('');
+    if (!payerName.trim()) {
+      setLocalError('ငွေလွှဲသူအမည် ဖြည့်ရန်လိုအပ်ပါသည်။');
+      return;
+    }
+    if (!transactionCode.trim()) {
+      setLocalError('နောက်ဆုံးဂဏန်း ၆ လုံး ဖြည့်ရန်လိုအပ်ပါသည်။');
+      return;
+    }
+    if (transactionCode.length !== 6 || !/^\d+$/.test(transactionCode)) {
+      setLocalError('ငွေလွှဲကုဒ်သည် ဂဏန်း ၆ လုံး ဖြစ်ရပါမည်။');
+      return;
+    }
+    if (!file && !existingPayment) {
+      setLocalError('ငွေလွှဲပြေစာ ဓာတ်ပုံ တင်ရန်လိုအပ်ပါသည်။');
+      return;
+    }
+
+    submitPaymentMutation.mutate(
+      {
+        payerName,
+        transactionCode,
+        file: file!,
+      },
+      {
+        onSuccess: (res) => {
+          if (res.ok) {
+            setActiveStepOverride('completed');
+          }
+        },
+        onError: (err) => {
+          const apiError = extractApiError(err);
+          setLocalError(apiError.message ?? 'ငွေပေးချေမှု တင်သွင်းခြင်း မအောင်မြင်ပါ။');
+        },
+      }
+    );
+  };
+
+  const isSubmitted = user?.applicationStatus === 'PAYMENT_SUBMITTED' || !!existingPayment;
+
+  return (
+    <div className='max-w-[800px] mx-auto bg-white border border-gray-200 rounded-2xl p-6 shadow-sm font-myanmar'>
+      <h3 className='text-lg font-bold text-gray-800 border-b border-gray-100 pb-3 mb-4'>
+        ကျောင်းအပ်နှံခ ငွေပေးချေရန်
+      </h3>
+
+      {/* Info card */}
+      <div className='bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 text-sm text-blue-800 leading-relaxed'>
+        <p className='font-bold mb-1.5'>⚠️ ငွေပေးချေမှု လမ်းညွှန်ချက် -</p>
+        <p>ကျောင်းအပ်နှံခ ၁၅,၀၀၀ ကျပ် အား အောက်ဖော်ပြပါ ငွေစာရင်း တစ်ခုခုသို့ လွှဲပေးပါရန် -</p>
+        <div className='mt-2.5 space-y-1.5 font-medium pl-2'>
+          <p>• KBZPay Account: <span className='font-bold text-blue-900'>09 123 456 789</span> (U Kyaw Kyaw)</p>
+          <p>• WavePay Account: <span className='font-bold text-blue-900'>09 123 456 789</span> (U Kyaw Kyaw)</p>
+          <p>• KBZ Bank: <span className='font-bold text-blue-900'>123-456-789-0123-4567</span> (U Kyaw Kyaw)</p>
+        </div>
+        <p className='mt-3 font-semibold text-red-600'>
+          * ငွေလွှဲပြေစာ ဓာတ်ပုံ တင်ရန်နှင့် ငွေလွှဲကုဒ်၏ နောက်ဆုံးဂဏန်း ၆ လုံး (last 6 digits) ကို တိကျစွာ ဖြည့်သွင်းပေးပါရန်။
+        </p>
+      </div>
+
+      {localError && (
+        <div className='bg-red-50 border border-red-200 rounded-xl p-3 mb-4 text-xs font-semibold text-red-700'>
+          ❌ {localError}
+        </div>
+      )}
+
+      <div className='grid grid-cols-1 md:grid-cols-3 gap-6 items-start'>
+        {/* Form inputs */}
+        <div className='md:col-span-2 space-y-4'>
+          <div>
+            <label className='block text-xs font-semibold text-gray-600 mb-1.5'>
+              ငွေလွှဲသူအမည် (Payer Name)
+            </label>
+            <input
+              type='text'
+              value={payerName}
+              onChange={(e) => setPayerName(e.target.value)}
+              disabled={isSubmitted || isPaymentLoading}
+              placeholder='ဥပမာ - U Kyaw Kyaw'
+              className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50'
+            />
+          </div>
+
+          <div>
+            <label className='block text-xs font-semibold text-gray-600 mb-1.5'>
+              ငွေလွှဲကုဒ်၏ နောက်ဆုံး ဂဏန်း ၆ လုံး (Transaction Code - Last 6 digits)
+            </label>
+            <input
+              type='text'
+              value={transactionCode}
+              onChange={(e) => setTransactionCode(e.target.value)}
+              disabled={isSubmitted || isPaymentLoading}
+              placeholder='ဥပမာ - 123456'
+              maxLength={6}
+              className='w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50'
+            />
+          </div>
+        </div>
+
+        {/* Photo upload */}
+        <div className='flex flex-col items-center justify-center'>
+          <label className='block text-xs font-semibold text-gray-600 mb-2 text-center w-full'>
+            ငွေလွှဲပြေစာ တင်ရန် (Payment Screenshot)
+          </label>
+          <PhotoUpload
+            label='ပြေစာ တင်ရန်'
+            preview={previewUrl}
+            onChange={handleFileChange}
+            isUploading={submitPaymentMutation.isPending}
+            isError={false}
+            width={150}
+            height={200}
+          />
+        </div>
+      </div>
+
+      <div className='flex justify-between items-center border-t border-gray-100 pt-5 mt-6'>
+        <button
+          onClick={() => setActiveStepOverride('recommendations')}
+          disabled={isSubmitted || submitPaymentMutation.isPending}
+          className='rounded-full border border-gray-300 hover:bg-gray-50 active:scale-[0.98] px-6 py-2.5 text-xs md:text-sm font-semibold text-gray-700 transition-all disabled:opacity-50'
+        >
+          နောက်သို့ပြန်သွားရန်
+        </button>
+        {!isSubmitted && (
+          <button
+            onClick={handlePaymentSubmit}
+            disabled={submitPaymentMutation.isPending}
+            className='flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50 px-8 py-2.5 text-xs md:text-sm font-semibold text-white shadow-md transition-all'
+          >
+            {submitPaymentMutation.isPending ? (
+              <>
+                <span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                တင်သွင်းနေသည်...
+              </>
+            ) : (
+              'ငွေပေးချေမှု တင်သွင်းရန်'
+            )}
+          </button>
+        )}
+      </div>
     </div>
   );
 };

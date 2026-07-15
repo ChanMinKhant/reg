@@ -31,6 +31,25 @@ export class StudentController {
   });
 
   /**
+   * GET /api/students/profile
+   * Retrieves the authenticated student's profile details.
+   */
+  getProfile = asyncHandler(async (req: Request, res: Response) => {
+    const user = (req as any).user as AuthTokenPayload;
+    if (!user) {
+      throw AppError.unauthorized('Authentication failed in getProfile.');
+    }
+
+    const profile = await studentService.getStudentProfile(user.id);
+    
+    res.status(200).json({
+      ok: true,
+      message: 'Profile retrieved successfully.',
+      data: profile || null,
+    });
+  });
+
+  /**
    * PATCH /api/students/status
    * Updates the application status of the authenticated student.
    */
@@ -55,7 +74,16 @@ export class StudentController {
    * Retrieves the uploaded photo URLs for the student.
    */
   getPhotos = asyncHandler(async (req: Request, res: Response) => {
+    const user = (req as any).user;
+    if (!user) {
+      throw AppError.unauthorized('Authentication failed in getPhotos.');
+    }
+
     const studentId = req.params.studentId;
+    if (user.role === 'student' && user.id !== Number(studentId)) {
+      throw AppError.forbidden('You are not authorized to view these photos.');
+    }
+
     const photos = await studentService.getPhotos(Number(studentId));
     
     res.status(200).json({
@@ -70,7 +98,16 @@ export class StudentController {
    * Uploads a single photo and links it to the student's photo record.
    */
   uploadPhoto = asyncHandler(async (req: Request, res: Response) => {
+    const user = (req as any).user;
+    if (!user) {
+      throw AppError.unauthorized('Authentication failed in uploadPhoto.');
+    }
+
     const studentId = req.params.studentId;
+    if (user.role === 'student' && user.id !== Number(studentId)) {
+      throw AppError.forbidden('You are not authorized to upload photos for this student.');
+    }
+
     const documentType = req.params.documentType as string;
     
     if (!req.file) {

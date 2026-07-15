@@ -10,6 +10,7 @@ import { useForm } from 'react-hook-form';
 import type { UseFormReturn } from 'react-hook-form';
 import { useAuthUser } from '@/features/auth/hooks/useAuthUser';
 import { useEntranceQuery } from '@/features/entrance/hooks/useEntranceQueries';
+import { useStudentProfileQuery } from './useStudentQueries';
 import { useMatriValidation } from './useMatriValidation';
 import { useEmailValidation } from './useEmailValidation';
 import { usePhoneValidation } from './usePhoneValidation';
@@ -84,6 +85,7 @@ interface StudentFormContextType {
   entrance: any;
   isEntranceLoading: boolean;
   isEntranceError: boolean;
+  isProfileLoading: boolean;
   formError: string;
   setFormError: (err: string) => void;
   emailMsg: { text: string; color: string };
@@ -120,6 +122,10 @@ export const StudentFormProvider = ({ children }: { children: ReactNode }) => {
     isError: isEntranceError,
   } = useEntranceQuery(true);
 
+  const { data: dbProfileRes, isLoading: isProfileLoading } = useStudentProfileQuery(
+    !!user?.hasStudentProfile
+  );
+
   const form = useForm<StudentFormValues>({
     defaultValues: DEFAULT_FORM_VALUES,
   });
@@ -142,6 +148,19 @@ export const StudentFormProvider = ({ children }: { children: ReactNode }) => {
       console.error('Failed to load student form draft:', e);
     }
   }, [storageKey, reset]);
+
+  // Pre-populate form with database profile if no local storage draft exists
+  useEffect(() => {
+    if (!storageKey || !dbProfileRes?.ok || !dbProfileRes?.data) return;
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (!saved) {
+        reset(dbProfileRes.data);
+      }
+    } catch (e) {
+      console.error('Failed to pre-populate student form from DB:', e);
+    }
+  }, [dbProfileRes, storageKey, reset]);
 
   // Subscribe to all changes to save draft to localStorage (excluding photo/sig previews)
   useEffect(() => {
@@ -368,6 +387,7 @@ export const StudentFormProvider = ({ children }: { children: ReactNode }) => {
         entrance,
         isEntranceLoading,
         isEntranceError,
+        isProfileLoading,
         formError,
         setFormError,
         emailMsg,

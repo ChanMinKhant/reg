@@ -37,16 +37,17 @@ const StudentRegistrationFormContent = ({
     setFormError,
     isEntranceLoading,
     isEntranceError,
+    isProfileLoading,
   } = useStudentFormContext();
 
   /* ─── loading / error guards ─────────────────────────────────── */
-  if (isEntranceLoading) {
+  if (isEntranceLoading || isProfileLoading) {
     return (
       <div className='flex min-h-[400px] items-center justify-center'>
         <div className='flex flex-col items-center gap-3'>
           <div className='h-8 w-8 animate-spin rounded-full border-[3px] border-blue-600 border-t-transparent' />
           <p className='text-sm font-medium tracking-wide text-gray-500'>
-            ခုံစာရင်းရယူနေပါသည်...
+            အချက်အလက်များ ရယူနေပါသည်...
           </p>
         </div>
       </div>

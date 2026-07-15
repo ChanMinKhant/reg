@@ -68,7 +68,22 @@ const storage = multer.diskStorage({
     cb(null, fileName);
   }
 });
-const upload = multer({ storage });
+const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only JPEG, PNG and WEBP image files are allowed!'));
+  }
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+});
 
 const paymentStorage = multer.diskStorage({
   destination: async (req, file, cb) => {
@@ -88,9 +103,25 @@ const paymentStorage = multer.diskStorage({
     cb(null, `payment+${uniqueSuffix}${ext}`);
   }
 });
-const uploadPayment = multer({ storage: paymentStorage });
+const uploadPayment = multer({
+  storage: paymentStorage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB
+  },
+});
 
 router.use(verifyAuth);
+
+/**
+ * @route GET /api/students/profile
+ * @desc Retrieves the student's saved registration profile details.
+ * @access Private (student)
+ */
+router.get(
+  '/profile',
+  studentController.getProfile
+);
 
 /**
  * @route POST /api/students/profile

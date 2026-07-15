@@ -6,6 +6,7 @@ import {
   updateStudentStatus,
   submitStudentPayment,
   getStudentPayment,
+  getStudentProfile,
 } from '../api/student.service';
 
 export const useStudentPhotosQuery = (studentId: number, enabled: boolean = true) => {
@@ -77,6 +78,14 @@ export const useStudentPaymentQuery = (enabled: boolean = true) => {
   return useQuery({
     queryKey: ['student-payment'],
     queryFn: () => getStudentPayment(),
+    enabled,
+  });
+};
+
+export const useStudentProfileQuery = (enabled: boolean = true) => {
+  return useQuery({
+    queryKey: ['student-profile'],
+    queryFn: () => getStudentProfile(),
     enabled,
   });
 };

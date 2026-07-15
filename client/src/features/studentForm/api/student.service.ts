@@ -57,3 +57,9 @@ export const getStudentPayment = async (): Promise<ApiResponse<any>> => {
   const res = await api.get<ApiResponse<any>>('/students/payment');
   return res.data;
 };
+
+export const getStudentProfile = async (): Promise<ApiResponse<any>> => {
+  const res = await api.get<ApiResponse<any>>('/students/profile');
+  return res.data;
+};
+

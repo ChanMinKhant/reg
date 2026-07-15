@@ -353,4 +353,94 @@ export class StudentService {
       where: { registrationId: registration.registrationId }
     });
   }
+
+  async getStudentProfile(studentId: number): Promise<any | null> {
+    const studentProfileRepo = AppDataSource.getRepository(StudentProfile);
+    const profile = await studentProfileRepo.findOne({
+      where: { studentId },
+      relations: [
+        'parentProfile',
+        'addresses',
+        'addresses.township',
+        'addresses.township.district',
+        'addresses.township.district.state',
+        'account'
+      ],
+    });
+
+    if (!profile) return null;
+
+    const parseNrc = (nrc: string | undefined | null) => {
+      if (!nrc) return { region: '', city: '', prefix: '', number: '' };
+      const match = nrc.match(/^([^\/]+)\/([^\(]+)\(([^\)]+)\)(.+)$/);
+      if (match) {
+        return {
+          region: match[1],
+          city: match[2],
+          prefix: match[3],
+          number: match[4],
+        };
+      }
+      return { region: '', city: '', prefix: '', number: '' };
+    };
+
+    const [matriPlaceSelect, matriRollNumber] = profile.highSchoolRollNo
+      ? profile.highSchoolRollNo.split('-')
+      : ['', ''];
+
+    const reverseGenderMap: Record<string, string> = {
+      M: 'ကျား',
+      F: 'မ',
+    };
+    const gender = reverseGenderMap[profile.gender] || 'Other';
+
+    const studentAddress = profile.addresses?.find((a) => a.type === 'current');
+    const parentAddress = profile.addresses?.find((a) => a.type === 'parent');
+
+    const mapAddress = (addr: any) => {
+      if (!addr) return { state: '', district: '', township: '', address: '' };
+      return {
+        state: addr.township?.district?.state?.nameMm || '',
+        district: addr.township?.district?.nameMm || '',
+        township: addr.township?.nameMm || '',
+        address: addr.streetAddress || '',
+      };
+    };
+
+    const dobString = profile.dob
+      ? new Date(profile.dob).toISOString().split('T')[0]
+      : '';
+
+    return {
+      nameMm: profile.nameMm,
+      nameEn: profile.nameEn,
+      fatherNameMm: profile.parentProfile?.fatherNameMm || '',
+      fatherNameEn: profile.parentProfile?.fatherNameEn || '',
+      motherNameMm: profile.parentProfile?.motherNameMm || '',
+      motherNameEn: profile.parentProfile?.motherNameEn || '',
+      studentNrc: parseNrc(profile.studentNrc),
+      fatherNrc: parseNrc(profile.parentProfile?.fatherNrc),
+      motherNrc: parseNrc(profile.parentProfile?.motherNrc),
+      ethnicity: profile.ethnicity || '',
+      fatherEthnicity: profile.parentProfile?.fatherEthnicity || '',
+      motherEthnicity: profile.parentProfile?.motherEthnicity || '',
+      religion: profile.religion || '',
+      fatherReligion: profile.parentProfile?.fatherReligion || '',
+      motherReligion: profile.parentProfile?.motherReligion || '',
+      dob: dobString,
+      gender,
+      entryAcademicYear: profile.entryAcademicYear || '',
+      matriPlaceSelect: matriPlaceSelect || '',
+      matriRollNumber: matriRollNumber || '',
+      highSchoolName: profile.highSchoolName || '',
+      fatherJob: profile.parentProfile?.fatherJob || '',
+      motherJob: profile.parentProfile?.motherJob || '',
+      parentContact: mapAddress(parentAddress),
+      parentPhone: profile.parentProfile?.parentPhone || '',
+      studentContact: mapAddress(studentAddress),
+      phoneNumber: profile.phoneNumber || '',
+      stdEmail: profile.account?.email || '',
+    };
+  }
 }
+
