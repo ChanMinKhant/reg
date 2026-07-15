@@ -5,3 +5,4 @@ dist
 .msal-cache.json
 src/database/example_data
 uploads
+src/database/queryDbForAgent

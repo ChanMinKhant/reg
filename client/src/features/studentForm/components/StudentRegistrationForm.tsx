@@ -126,7 +126,7 @@ const StudentRegistrationFormContent = ({
               height={160}
             />
           </div>
-          <div className='flex-1'>
+          <div className='flex-1 flex justify-end'>
             <EnrollmentSection width='400px' />
           </div>
         </div>
